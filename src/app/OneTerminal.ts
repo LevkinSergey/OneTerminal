@@ -1,6 +1,7 @@
 import { Terminal } from '@xterm/xterm'
 import { emitEventTo1C } from '../appFor1C/eventDispatcherTo1C'
 import { TERMINAL_COMMAND_EXECUTED } from '../appFor1C/eventNames'
+import { CommandManager } from './Command/CommandManager'
 
 export interface CommandExecuteInfo {
   name: string
@@ -19,6 +20,8 @@ export interface CommandConfig {
 
 export class OneTerminal {
   private terminal: Terminal
+  private commandManager: CommandManager
+
   private command: string = ''
   private commands: Record<string, CommandConfig> = {}
   private history: string[] = []
@@ -39,6 +42,8 @@ export class OneTerminal {
       cursorInactiveStyle: 'outline',
       disableStdin: true
     })
+
+    this.commandManager = new CommandManager()
 
     this.commands = {
       help: {
@@ -70,16 +75,29 @@ export class OneTerminal {
                 remaining = remaining.substring(splitIndex)
               }
             }
-            return `  \x1b[36;1m${name.padEnd(padding)}\x1b[0m ${d[0]}` + d.slice(1).map(e => `\r\n  ${' '.repeat(padding)} ${e}`)
+            return (
+              `  \x1b[36;1m${name.padEnd(padding)}\x1b[0m ${d[0]}` +
+              d.slice(1).map(e => `\r\n  ${' '.repeat(padding)} ${e}`)
+            )
           }
-          this.terminal.writeln(['Welcome to xterm.js! Try some of the commands below.', '', ...Object.keys(this.commands).map(e => formatMessage(e, this.commands[e].description))].join('\n\r'))
+          this.terminal.writeln(
+            [
+              'Welcome to xterm.js! Try some of the commands below.',
+              '',
+              ...Object.keys(this.commands).map(e =>
+                formatMessage(e, this.commands[e].description)
+              )
+            ].join('\n\r')
+          )
           this.prompt()
         }
       },
       ls: {
         description: 'Prints a fake directory structure',
         onExecute: () => {
-          this.terminal.writeln(['a', 'bunch', 'of', 'fake', 'files'].join('\r\n'))
+          this.terminal.writeln(
+            ['a', 'bunch', 'of', 'fake', 'files'].join('\r\n')
+          )
           this.prompt()
         }
       },
@@ -97,14 +115,16 @@ export class OneTerminal {
           this.prompt()
         }
       },
-       cd: {
+      cd: {
         description: 'Change the working directory',
         onExecute: info => {
           const dir = info.args[0] || '~'
           if (dir === '~') {
             this.currentDir = '/home/user'
           } else {
-            this.currentDir = dir.startsWith('/') ? dir : `${this.currentDir}/${dir}`
+            this.currentDir = dir.startsWith('/')
+              ? dir
+              : `${this.currentDir}/${dir}`
           }
           this.terminal.writeln(`Changed to ${this.currentDir}`)
           this.prompt()
@@ -118,7 +138,7 @@ export class OneTerminal {
           this.prompt()
         }
       },
-       pwd: {
+      pwd: {
         description: 'Print name of current/working directory',
         onExecute: () => {
           this.terminal.writeln(this.currentDir)
@@ -142,7 +162,9 @@ export class OneTerminal {
       env: {
         description: 'Print environment',
         onExecute: () => {
-          this.terminal.writeln(['PATH=/usr/local/bin', 'HOME=/home/user', 'USER=user'].join('\r\n'))
+          this.terminal.writeln(
+            ['PATH=/usr/local/bin', 'HOME=/home/user', 'USER=user'].join('\r\n')
+          )
           this.prompt()
         }
       }
@@ -244,7 +266,9 @@ export class OneTerminal {
         case 'Delete':
           domEvent.preventDefault()
           if (this.cursorPosition < this.command.length) {
-            this.command = this.command.slice(0, this.cursorPosition) + this.command.slice(this.cursorPosition + 1)
+            this.command =
+              this.command.slice(0, this.cursorPosition) +
+              this.command.slice(this.cursorPosition + 1)
             this.redrawInput()
           }
           break
@@ -286,8 +310,15 @@ export class OneTerminal {
               this.redrawInput()
             } else if (domEvent.ctrlKey && key === 'v') {
               this.handlePaste()
-            } else if (!domEvent.ctrlKey && !domEvent.altKey && !domEvent.metaKey) {
-              this.command = this.command.slice(0, this.cursorPosition) + key + this.command.slice(this.cursorPosition)
+            } else if (
+              !domEvent.ctrlKey &&
+              !domEvent.altKey &&
+              !domEvent.metaKey
+            ) {
+              this.command =
+                this.command.slice(0, this.cursorPosition) +
+                key +
+                this.command.slice(this.cursorPosition)
               this.terminal.write(key)
               this.cursorPosition++
             }
@@ -318,7 +349,9 @@ export class OneTerminal {
     const lastPart = parts[parts.length - 1]
     const prefix = parts.slice(0, -1).join(' ')
 
-    const matches = Object.keys(this.commands).filter(cmd => cmd.startsWith(lastPart))
+    const matches = Object.keys(this.commands).filter(cmd =>
+      cmd.startsWith(lastPart)
+    )
     if (matches.length === 1) {
       parts[parts.length - 1] = matches[0]
       this.command = parts.join(' ')
@@ -336,7 +369,10 @@ export class OneTerminal {
       navigator.clipboard
         .readText()
         .then(text => {
-          this.command = this.command.slice(0, this.cursorPosition) + text + this.command.slice(this.cursorPosition)
+          this.command =
+            this.command.slice(0, this.cursorPosition) +
+            text +
+            this.command.slice(this.cursorPosition)
           this.terminal.write(text)
           this.cursorPosition += text.length
         })
@@ -366,7 +402,10 @@ export class OneTerminal {
   }
 
   prompt() {
-    const pathToDisplay = this.currentDir.length > this.maxPathLength ? '...' + this.currentDir.slice(-this.maxPathLength + 3) : this.currentDir
+    const pathToDisplay =
+      this.currentDir.length > this.maxPathLength
+        ? '...' + this.currentDir.slice(-this.maxPathLength + 3)
+        : this.currentDir
     this.terminal.write(`\r\n[${pathToDisplay}] $ `)
   }
 
@@ -376,7 +415,11 @@ export class OneTerminal {
     const name = parts[0]
     if (name.length > 0) {
       this.terminal.writeln('')
-      if (trimmed && (this.history.length === 0 || this.history[this.history.length - 1] !== trimmed)) {
+      if (
+        trimmed &&
+        (this.history.length === 0 ||
+          this.history[this.history.length - 1] !== trimmed)
+      ) {
         this.history.push(trimmed)
         if (this.history.length > this.maxHistory) {
           this.history.shift()

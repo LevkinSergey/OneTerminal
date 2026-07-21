@@ -1,9 +1,10 @@
-import './index.scss'
-import { OneTerminal } from './OneTerminal'
-import '../appFor1C/app-to-1c'
+import './index.scss';
+import { OneTerminal } from './OneTerminal';
+import '../appFor1C/app-to-1c';
+import { CommandManager } from './Command/CommandManager';
 
-const onecTerminal = new OneTerminal()
+window.oneTerminal = new OneTerminal();
 
 export const init = async () => {
-  onecTerminal.init(document.getElementById('app') as HTMLElement)
-}
+	window.oneTerminal.init(document.getElementById('app') as HTMLElement);
+};
