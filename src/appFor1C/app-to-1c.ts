@@ -1,6 +1,7 @@
 export interface AppTo1C {
   setBaseUrl: (url: string) => void
   close: () => void
+  endOperation: () => void
 }
 
 const setBaseUrl = (url: string): void => {
@@ -19,7 +20,18 @@ const close = () => {
   }, 0)
 }
 
+const endOperation = () => {
+  if (!window.terminalstream) {
+    return
+  }
+
+  window.terminalstream.write('asdlasjdjasld')
+  window.terminalstream.close()
+  window.terminalstream = undefined
+}
+
 window.appTo1C = {
   setBaseUrl,
-  close
+  close,
+  endOperation
 }

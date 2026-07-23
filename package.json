@@ -79,5 +79,8 @@
     "1c",
     "typescript",
     "scss"
-  ]
+  ],
+  "dependencies": {
+    "web-termjs": "^1.1.2"
+  }
 }
