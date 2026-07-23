@@ -12,7 +12,7 @@ const dirs = {
 const subDirs = {
   // path to Output sub dir (js, css, fonts, etc.)
   // i.g. `dist/assets/css/` & dist/assets/js/
-  assets: 'assets/',
+  assets: '',
 
   // path to Output sub dir (img, icons, etc.)
   // i.g. `dist/static/img/` & `dist/static/fonts/`

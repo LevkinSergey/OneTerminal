@@ -16,179 +16,205 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const isDev = process.env.NODE_ENV !== 'production'
 
 module.exports = {
-  entry: {
-    app: `${defines.src}/index.ts`
-    // another app example:
-    // auth: `${defines.src}/_auth/index.ts`
-  },
-  output: {
-    path: defines.dist,
-    // if you need hash:
-    // filename: `${defines.assets}js/[name].[contenthash].js`
-    // if you don't need hash:
-    filename: `${defines.assets}js/[name].js`
-  },
-
-  // optimization (chunks)
-  optimization: {
-    chunkIds: 'named',
-    mergeDuplicateChunks: true,
-
-    splitChunks: {
-      chunks: 'async',
-      minSize: 20000,
-      minRemainingSize: 0,
-      minChunks: 1,
-      maxAsyncRequests: 30,
-      maxInitialRequests: 30,
-      enforceSizeThreshold: 50000,
-      cacheGroups: {
-        defaultVendors: {
-          name: 'vendors', // or comment name to make chunks works
-          chunks: 'all',
-          // the way to keep kit in the vendors
-          test: /[\\/]node_modules[\\/]|[\\/]ui-kit[\\/]/,
-          priority: -10,
-          reuseExistingChunk: true
-        },
-        default: {
-          minChunks: 2,
-          priority: -20,
-          reuseExistingChunk: true
-        }
-      }
+  entryes: [
+    {
+      key: 'app',
+      path: `${defines.src}/index.ts`
     }
-  },
+  ],
+  baseconfig: {
+    entry: {},
+    output: {
+      path: defines.dist,
+      // if you need hash:
+      // filename: `${defines.assets}js/[name].[contenthash].js`
+      // if you don't need hash:
+      filename: `[name].js`
+    },
 
-  module: {
-    rules: [
-      // js(x) & ts(x)
-      {
-        test: /\.(ts|js)x?$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
+    // optimization (chunks)
+    optimization: {
+      chunkIds: 'named',
+      mergeDuplicateChunks: true,
 
-          options: {
-            // react-refresh example:
-            // plugins: [isDev && require.resolve('react-refresh/babel')].filter(Boolean)
+      splitChunks: {
+        chunks: 'async',
+        minSize: 200000,
+        minRemainingSize: 0,
+        minChunks: 1,
+        maxSize: 512000,
+        maxAsyncRequests: 30,
+        maxInitialRequests: 30,
+        enforceSizeThreshold: 50000,
+        cacheGroups: {
+          defaultVendors: {
+            name: 'vendors', // or comment name to make chunks works
+            chunks: 'all',
+            // the way to keep kit in the vendors
+            test: /[\\/]node_modules[\\/]|[\\/]ui-kit[\\/]/,
+            priority: -10,
+            reuseExistingChunk: true
+          },
+          default: {
+            minChunks: 1,
+            priority: -5,
+            reuseExistingChunk: true
           }
         }
-      },
+      }
+    },
 
-      // sass & css
-      {
-        test: /\.s(a|c)ss$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          'css-loader',
-          {
-            loader: 'postcss-loader',
+    module: {
+      rules: [
+        // js(x) & ts(x)
+        {
+          test: /\.(ts|js)x?$/,
+          exclude: /node_modules/,
+          use: {
+            loader: 'babel-loader',
+
             options: {
-              postcssOptions: {
-                plugins: [
-                  [
-                    // add more postcss plugins here
-                    // ...
+              // react-refresh example:
+              // plugins: [isDev && require.resolve('react-refresh/babel')].filter(Boolean)
+            }
+          }
+        },
 
-                    // https://www.npmjs.com/package/postcss-preset-env
-                    // it's including autoprefixer by default (config is in `package.json`)
-                    // pass `autoprefixer: false` to disable autoprefixer
-                    'postcss-preset-env'
-                  ]
-                ],
+        // sass & css
+        {
+          test: /\.s(a|c)ss$/,
+          use: [
+            MiniCssExtractPlugin.loader,
+            'css-loader',
+            {
+              loader: 'postcss-loader',
+              options: {
                 postcssOptions: {
-                  parser: 'postcss-js'
-                },
-                execute: true
+                  plugins: [
+                    [
+                      // add more postcss plugins here
+                      // ...
+
+                      // https://www.npmjs.com/package/postcss-preset-env
+                      // it's including autoprefixer by default (config is in `package.json`)
+                      // pass `autoprefixer: false` to disable autoprefixer
+                      'postcss-preset-env'
+                    ]
+                  ],
+                  postcssOptions: {
+                    parser: 'postcss-js'
+                  },
+                  execute: true
+                }
+              }
+            },
+            {
+              loader: 'sass-loader',
+              options: {
+                sourceMap: isDev
               }
             }
-          },
-          {
-            loader: 'sass-loader',
-            options: {
-              sourceMap: isDev
-            }
+          ]
+        },
+
+        // svg in js(x) & ts(x)
+        {
+          test: /\.svg$/i,
+          issuer: /\.[jt]sx?$/,
+          use: [
+            // https://react-svgr.com/docs/webpack/
+            '@svgr/webpack'
+          ]
+        },
+
+        // fonts
+        {
+          test: /\.(woff(2)?|ttf|eot)(\?v=\d+\.\d+\.\d+)?$/,
+          loader: 'file-loader',
+          options: {
+            name: '[name].[ext]'
           }
-        ]
-      },
+        },
 
-      // svg in js(x) & ts(x)
-      {
-        test: /\.svg$/i,
-        issuer: /\.[jt]sx?$/,
-        use: [
-          // https://react-svgr.com/docs/webpack/
-          '@svgr/webpack'
-        ]
-      },
-
-      // fonts
-      {
-        test: /\.(woff(2)?|ttf|eot)(\?v=\d+\.\d+\.\d+)?$/,
-        loader: 'file-loader',
-        options: {
-          name: '[name].[ext]'
+        // images
+        {
+          test: /\.(?:ico|gif|png|jpg|jpeg)$/i,
+          type: 'asset/resource'
         }
-      },
-
-      // images
-      {
-        test: /\.(?:ico|gif|png|jpg|jpeg)$/i,
-        type: 'asset/resource'
-      }
-    ]
-  },
-  plugins: [
-    // html pages:
-
-    // can be manually (one by one):
-    new HtmlWebpackPlugin({
-      inject: 'body',
-      title: 'Terminal for 1c',
-      // favicon: defines.src + '/shared/misc/favicon.ico',
-      template: defines.public + '/index.html',
-      filename: 'index.html', // output file
-      minify: {
-        removeComments: true,
-        collapseWhitespace: true,
-        removeRedundantAttributes: true,
-        useShortDoctype: true,
-        removeEmptyAttributes: true,
-        removeStyleLinkTypeAttributes: true,
-        keepClosingSlash: true,
-        minifyJS: true,
-        minifyCSS: true,
-        minifyURLs: true
-      }
-    }),
-    // new HtmlWebpackPlugin({
-    //   title: 'About page',
-    //   favicon: defines.src + '/shared/misc/favicon.ico',
-    //   template: defines.public + '/about.html',
-    //   filename: 'about.html' // output file
-    // }),
-
-    // or by config (from `webpack-pages.js`):
-
-    // extract css from js / ts files (it's a basic setup to keep css in `css` folder)
-    // https://webpack.js.org/plugins/mini-css-extract-plugin/
-    new MiniCssExtractPlugin({
-      // if you need hash:
-      // filename: `${defines.assets}css/[name].[contenthash].css`,
-      // if you don't need hash:
-      filename: `${defines.assets}css/[name].css`,
-      chunkFilename: '[id].css'
-    })
-
-    // copy files from target to destination folder
-  ],
-
-  resolve: {
-    alias: {
-      // no need since I use `tsconfig` & `jsconfig`
-      // '@': defines.src
+      ]
     },
-    extensions: ['.ts', '.tsx', '.js', '.jsx']
+    plugins: [
+      // html pages:
+
+      // can be manually (one by one):
+      new HtmlWebpackPlugin({
+        inject: 'body',
+        title: 'OneTerminal',
+        // favicon: defines.src + '/shared/misc/favicon.ico',
+        template: defines.public + '/index.html',
+        filename: 'index.html', // output file
+        minify: {
+          removeComments: true,
+          collapseWhitespace: true,
+          removeRedundantAttributes: true,
+          useShortDoctype: true,
+          removeEmptyAttributes: true,
+          removeStyleLinkTypeAttributes: true,
+          keepClosingSlash: true,
+          minifyJS: true,
+          minifyCSS: true,
+          minifyURLs: true
+        }
+      }),
+      // new HtmlWebpackPlugin({
+      //   title: 'About page',
+      //   favicon: defines.src + '/shared/misc/favicon.ico',
+      //   template: defines.public + '/about.html',
+      //   filename: 'about.html' // output file
+      // }),
+
+      // extract css from js / ts files (it's a basic setup to keep css in `css` folder)
+      // https://webpack.js.org/plugins/mini-css-extract-plugin/
+      new MiniCssExtractPlugin({
+        // if you need hash:
+        // filename: `${defines.assets}css/[name].[contenthash].css`,
+        // if you don't need hash:
+        filename: `[name].css`,
+        chunkFilename: '[id].css'
+      })
+
+      // copy files from target to destination folder
+      // new CopyWebpackPlugin({
+      //   patterns: [
+      //     // `shared/img` to `dist/static/img`
+      //     {
+      //       from: `${defines.src}/shared/img`,
+      //       to: `${defines.dist}/${defines.static}/img`
+      //     },
+
+      //     // others:
+      //     // `shared/fonts` to `dist/static/fonts`
+      //     // {
+      //     //   from: `${defines.src}/shared/fonts`,
+      //     //   to: `${defines.dist}/${defines.static}/fonts`
+      //     // },
+
+      //     // misc
+      //     // `shared/misc` to `dist/`
+      //     {
+      //       from: `${defines.src}/shared/misc`,
+      //       to: `${defines.dist}`
+      //     }
+      //   ]
+      // })
+    ],
+
+    resolve: {
+      alias: {
+        // no need since I use `tsconfig` & `jsconfig`
+        // '@': defines.src
+      },
+      extensions: ['.ts', '.tsx', '.js', '.jsx']
+    }
   }
 }

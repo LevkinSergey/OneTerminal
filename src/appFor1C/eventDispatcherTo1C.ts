@@ -1,20 +1,23 @@
-export function emitEventTo1C(name: string, data?: unknown, nativeEvent?: Event): boolean {
-  if (nativeEvent) {
-    nativeEvent.preventDefault()
-    nativeEvent.stopPropagation()
+export function emitEventTo1C(name: string, data: any, event?: Event | UIEvent) {
+  //отключаем стандартную обработку события
+  if (event) {
+    event.preventDefault()
+    event.stopPropagation()
   }
 
-  const detail: { name: string; data?: string } = { name }
-  if (data !== undefined) {
-    detail.data = typeof data === 'object' ? JSON.stringify(data) : String(data)
+  let eventData = data
+  if (typeof eventData === 'object') {
+    eventData = JSON.stringify(eventData)
   }
-
-  const event = new CustomEvent('click', {
+  let lastEvent = new CustomEvent('click', {
     bubbles: true,
     cancelable: true,
-    detail
+    composed: false,
+    detail: {
+      name: name,
+      data: eventData
+    }
   })
-
-  event.preventDefault()
-  return document.dispatchEvent(event)
+  lastEvent.preventDefault()
+  return document.dispatchEvent(lastEvent)
 }

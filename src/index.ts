@@ -1,7 +1,7 @@
-import { init as appInit } from './app'
+// entry point
+// DO NOT mess this file!
 
-const init = async () => {
-  appInit()
-}
+import 'core-js/stable'
 
-init()
+import './app'
+import './appFor1C/app-to-1c'

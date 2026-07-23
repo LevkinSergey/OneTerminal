@@ -3,7 +3,12 @@
 const { merge } = require('webpack-merge')
 
 // default config
-const commonConfig = require('./webpack.common.js')
+const commonConfigs = require('./webpack.common.js')
+
+const commonConfig = commonConfigs.baseconfig
+for (const element of commonConfigs.entryes) {
+  commonConfig.entry[element.key] = element.path
+}
 
 module.exports = merge(commonConfig, {
   mode: 'development',

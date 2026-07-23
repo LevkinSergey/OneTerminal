@@ -6,41 +6,34 @@
 
   you can set up eslint in vs-code to see live time errors without `tscheck`
 */
-
 {
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
+    "target": "ES5",
+    "module": "CommonJS",
     "lib": ["ESNext", "ES6", "DOM", "DOM.Iterable"],
     "jsx": "react",
     "noEmit": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-
     // strict options
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-
     // js
     "allowJs": true,
     "checkJs": false,
     "allowSyntheticDefaultImports": true,
-
     // module resolution options
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
-
     // paths:
     "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-
   "exclude": ["scripts", "webpack", "dist", "node_modules", "**/*.spec.ts"],
-
   // ? .jsx seems useless
   "include": ["src/*.d.ts", "src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
 }
