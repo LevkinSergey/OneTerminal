@@ -81,6 +81,7 @@
     "scss"
   ],
   "dependencies": {
-    "web-termjs": "^1.1.2"
+    "keyboardevent-key-polyfill": "^1.1.0",
+    "xterm": "^3.14.5"
   }
 }
