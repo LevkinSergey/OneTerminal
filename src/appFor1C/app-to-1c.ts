@@ -24,7 +24,7 @@ const close = () => {
 }
 
 const init: AppTo1C['init'] = options => {
-  window.terminal.init(options)
+  window.terminal.init(options || {})
 }
 
 const endOperation = (log: string) => {

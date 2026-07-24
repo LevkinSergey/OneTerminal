@@ -37,10 +37,10 @@ module.exports = {
         ...(process.env.BABEL_MODULE === 'commonjs'
           ? ['@babel/plugin-transform-modules-commonjs']
           : process.env.STORYBOOK
-          ? []
-          : [
-              'transform-commonjs' // theme-preval is commonjs and needs to be transformed to esm
-            ]),
+            ? []
+            : [
+                'transform-commonjs' // theme-preval is commonjs and needs to be transformed to esm
+              ]),
         ...sharedPlugins,
         replacementPlugin('development')
       ]
