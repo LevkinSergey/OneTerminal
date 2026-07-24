@@ -116,6 +116,26 @@ export class OneTerminal {
     this.prompt()
   }
 
+  setInput(input: string) {
+    this.inputBuffer = input
+    this.cursorPosition = input.length
+    this.terminalCursorX = ` ${this.path}${this.separator} `.length + input.length
+    this.redrawInput()
+  }
+
+  insertText(text: string) {
+    this.inputBuffer = this.inputBuffer.slice(0, this.cursorPosition) + text + this.inputBuffer.slice(this.cursorPosition)
+    this.cursorPosition += text.length
+    this.redrawInput()
+  }
+
+  clearInput() {
+    this.inputBuffer = ''
+    this.cursorPosition = 0
+    this.terminalCursorX = ` ${this.path}${this.separator} `.length
+    this.redrawInput()
+  }
+
   private onData(data: string) {
     if (this.dataDisabled) {
       return

@@ -5,6 +5,9 @@ export interface AppTo1C {
   close: () => void
   endOperation: (log: string) => void
   init: (options?: OneTerminalOptions) => void
+  setInput: (input: string) => void
+  insertText: (text: string) => void
+  clearInput: () => void
 }
 
 const setBaseUrl = (url: string): void => {
@@ -36,9 +39,30 @@ const endOperation = (log: string) => {
   // window.terminalstream = undefined
 }
 
+const setInput = (input: string): void => {
+  setTimeout(() => {
+    window.terminal.setInput(input)
+  }, 0)
+}
+
+const insertText = (text: string): void => {
+  setTimeout(() => {
+    window.terminal.insertText(text)
+  }, 0)
+}
+
+const clearInput = (): void => {
+  setTimeout(() => {
+    window.terminal.clearInput()
+  }, 0)
+}
+
 window.appTo1C = {
   setBaseUrl,
   close,
   endOperation,
-  init
+  init,
+  setInput,
+  insertText,
+  clearInput
 }
