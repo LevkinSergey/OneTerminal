@@ -1,7 +1,11 @@
 import { Terminal } from 'xterm'
 import { fit } from 'xterm/lib/addons/fit/fit'
+import { WebLinksAddon } from 'xterm-addon-web-links'
 
-export interface OneTerminalOptions {}
+export interface OneTerminalOptions {
+  path?: string
+  separator?: string
+}
 
 export class OneTerminal {
   private terminal: Terminal
@@ -9,13 +13,23 @@ export class OneTerminal {
   private separator: string = '$'
   private initilized: boolean = false
 
+  private dataDisabled: boolean = false
+
   constructor() {
     this.terminal = new Terminal({
-      convertEol: true,
+      windowsMode: false,
+      // convertEol: true,
       rightClickSelectsWord: true
       // disableStdin: true
     })
     this.path = ''
+
+    this.terminal.loadAddon(
+      new WebLinksAddon((event, url) => {
+        event.preventDefault()
+        console.log('link', url)
+      })
+    )
 
     this.terminal.onKey(this.onKey.bind(this))
     this.terminal.onLineFeed(this.onLineFeed.bind(this))
@@ -29,12 +43,16 @@ export class OneTerminal {
     if (this.initilized) {
       return
     }
+    this.path = options.path || ''
+    this.separator = options.separator || '$'
 
     this.terminal.open(document.getElementById('app') as HTMLElement)
 
     this.fit()
     this.terminal.focus()
     this.initilized = true
+
+    this.prompt()
   }
 
   fit() {
@@ -42,7 +60,7 @@ export class OneTerminal {
   }
 
   prompt() {
-    this.terminal.write('\r\n типо папка:$ ')
+    this.terminal.write(`\r\n ${this.path}${this.separator} `)
   }
 
   write(data: string) {
@@ -55,7 +73,11 @@ export class OneTerminal {
   }
 
   private onData(data: string) {
+    if (this.dataDisabled) {
+      return
+    }
     console.log('onData', data)
+    this.terminal.write(data)
   }
 
   private onCursorMove() {
@@ -70,6 +92,7 @@ export class OneTerminal {
 
   private onKey(e: { key: string; domEvent: KeyboardEvent }) {
     console.log('onKey', e)
+    this.dataDisabled = true
 
     const ev = e.domEvent as KeyboardEvent
     const printable = !ev.altKey && !ev.ctrlKey && !ev.metaKey
@@ -82,7 +105,8 @@ export class OneTerminal {
     } else if (key === 'ArrowUp') {
     } else if (key === 'ArrowDown') {
     } else if (printable) {
-      window.terminal.write(e.key)
+      this.dataDisabled = false
+      // window.terminal.write(e.key)
     }
   }
   private onLineFeed() {

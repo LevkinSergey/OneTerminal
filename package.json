@@ -82,6 +82,7 @@
   ],
   "dependencies": {
     "keyboardevent-key-polyfill": "^1.1.0",
-    "xterm": "^3.14.5"
+    "xterm": "^3.14.5",
+    "xterm-addon-web-links": "^0.1.0"
   }
 }

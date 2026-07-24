@@ -6,7 +6,10 @@ window.terminal = new OneTerminal()
 window.addEventListener('resize', () => window.terminal.fit())
 
 function runFakeTerminal(): void {
-  window.terminal.init({})
+  window.terminal.init({
+    path: 'fake',
+    separator: '$'
+  })
 }
 // createTerminal()
 runFakeTerminal()
