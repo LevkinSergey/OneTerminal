@@ -157,6 +157,7 @@ export class OneTerminal {
       this.handleBackspace()
     } else if (key === 'Delete') {
       this.handleDelete()
+    } else if (key === 'Tab' || key === 'Insert' || key === 'PageUp' || key === 'PageDown') {
     } else if (printable) {
       this.handleCharacterInput(e.key)
     }
