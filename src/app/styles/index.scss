@@ -2,3 +2,8 @@
 
 // scss imports can be here (local files only):
 @import './body.scss';
+
+#app {
+  width: 100%;
+  height: 100vh;
+}

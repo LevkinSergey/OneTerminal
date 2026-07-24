@@ -1,4 +1,5 @@
 import { Terminal } from 'xterm'
+import { fit } from 'xterm/lib/addons/fit/fit'
 
 export interface OneTerminalOptions {}
 
@@ -15,6 +16,13 @@ export class OneTerminal {
       // disableStdin: true
     })
     this.path = ''
+
+    this.terminal.onKey(this.onKey.bind(this))
+    this.terminal.onLineFeed(this.onLineFeed.bind(this))
+    this.terminal.onData(this.onData.bind(this))
+    this.terminal.onResize(this.onResize.bind(this))
+    this.terminal.onTitleChange(this.onTitleChange.bind(this))
+    this.terminal.onCursorMove(this.onCursorMove.bind(this))
   }
 
   init(options: OneTerminalOptions) {
@@ -23,15 +31,14 @@ export class OneTerminal {
     }
 
     this.terminal.open(document.getElementById('app') as HTMLElement)
-    this.terminal.onKey(this.onKey.bind(this))
-    this.terminal.onLineFeed(this.onLineFeed.bind(this))
-    this.terminal.onData(this.onData.bind(this))
-    this.terminal.onResize(this.onResize.bind(this))
-    this.terminal.onTitleChange(this.onTitleChange.bind(this))
-    this.terminal.onCursorMove(this.onCursorMove.bind(this))
 
+    this.fit()
     this.terminal.focus()
     this.initilized = true
+  }
+
+  fit() {
+    fit(this.terminal)
   }
 
   prompt() {
@@ -59,9 +66,7 @@ export class OneTerminal {
     console.log('onTitleChange', title)
   }
 
-  private onResize(ev: { cols: number; rows: number }) {
-    console.log('onResize', ev)
-  }
+  private onResize(ev: { cols: number; rows: number }) {}
 
   private onKey(e: { key: string; domEvent: KeyboardEvent }) {
     console.log('onKey', e)
