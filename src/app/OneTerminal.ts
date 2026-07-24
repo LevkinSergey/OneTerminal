@@ -178,6 +178,10 @@ export class OneTerminal {
     } else if (key === 'Delete') {
       this.handleDelete()
     } else if (key === 'Tab' || key === 'Insert' || key === 'PageUp' || key === 'PageDown') {
+    } else if (key === 'Home') {
+      this.handleHome()
+    } else if (key === 'End') {
+      this.handleEnd()
     } else if (printable) {
       this.handleCharacterInput(e.key)
     }
@@ -248,6 +252,16 @@ export class OneTerminal {
       this.inputBuffer = this.inputBuffer.slice(0, this.cursorPosition) + this.inputBuffer.slice(this.cursorPosition + 1)
       this.redrawInput()
     }
+  }
+
+  private handleHome() {
+    this.cursorPosition = 0
+    this.redrawInput()
+  }
+
+  private handleEnd() {
+    this.cursorPosition = this.inputBuffer.length
+    this.redrawInput()
   }
 
   private handleEnter() {
