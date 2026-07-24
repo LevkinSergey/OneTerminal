@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>OneTerminal Tests for 1C</title>
+  <link rel="stylesheet" href="qunit.css">
+  <style>
+    #app {
+      width: 100%;
+      height: 100vh;
+    }
+
+    #qunit-fixture {
+      position: static;
+      top: auto;
+      left: auto;
+      width: auto;
+      height: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture">
+    <div id="app"></div>
+  </div>
+
+  <script src="qunit.min.js"></script>
+
+  <script src="../dist/assets/js/app.js"></script>
+
+  <script>
+    QUnit.config.testTimeout = 10000;
+    QUnit.config.blocking = false;
+  </script>
+
+  <script>
+    (function () {
+      var terminal;
+      var appTo1C;
+
+      QUnit.module('Terminal Initialization', {
+        beforeEach: function () {
+          terminal = window.terminal;
+          appTo1C = window.appTo1C;
+        }
+      });
+
+      QUnit.test('terminal renders in #app element', function (assert) {
+        var xterm = document.querySelector('#app .xterm');
+        assert.ok(xterm, 'xterm element exists in #app');
+        assert.ok(xterm.offsetWidth > 0, 'xterm has width');
+        assert.ok(xterm.offsetHeight > 0, 'xterm has height');
+      });
+
+      QUnit.test('terminal is focused after init', function (assert) {
+        var textarea = document.querySelector('.xterm-helper-textarea');
+        assert.ok(textarea, 'textarea exists');
+        assert.equal(document.activeElement, textarea, 'textarea is focused');
+      });
+
+      QUnit.test('fit() is called on resize', function (assert) {
+        var done = assert.async();
+        var originalFit = terminal.fit;
+        var fitCalled = false;
+        terminal.fit = function () {
+          fitCalled = true;
+          terminal.fit = originalFit;
+        };
+        window.dispatchEvent(new Event('resize'));
+        setTimeout(function () {
+          terminal.fit = originalFit;
+          assert.ok(fitCalled, 'fit() was called on resize');
+          done();
+        }, 100);
+      });
+
+      QUnit.test('window.terminal has core methods accessible', function (assert) {
+        assert.ok(terminal, 'terminal exists');
+        assert.equal(terminal.initilized, true, 'terminal is initialized');
+        assert.equal(typeof terminal.setInput, 'function', 'setInput is function');
+        assert.equal(typeof terminal.insertText, 'function', 'insertText is function');
+        assert.equal(typeof terminal.clearInput, 'function', 'clearInput is function');
+        assert.equal(typeof terminal.write, 'function', 'write is function');
+        assert.equal(typeof terminal.clear, 'function', 'clear is function');
+        assert.equal(typeof terminal.fit, 'function', 'fit is function');
+      });
+
+      QUnit.test('window.appTo1C has all methods accessible', function (assert) {
+        assert.ok(appTo1C, 'appTo1C exists');
+        assert.equal(typeof appTo1C.setInput, 'function', 'setInput is function');
+        assert.equal(typeof appTo1C.insertText, 'function', 'insertText is function');
+        assert.equal(typeof appTo1C.clearInput, 'function', 'clearInput is function');
+        assert.equal(typeof appTo1C.setBaseUrl, 'function', 'setBaseUrl is function');
+        assert.equal(typeof appTo1C.close, 'function', 'close is function');
+        assert.equal(typeof appTo1C.endOperation, 'function', 'endOperation is function');
+        assert.equal(typeof appTo1C.init, 'function', 'init is function');
+      });
+    })();
+  </script>
+
+  <script>
+    (function () {
+      var terminal;
+
+      QUnit.module('Terminal Input Handling', {
+        beforeEach: function () {
+          terminal = window.terminal;
+        }
+      });
+
+      QUnit.test('setInput sets input buffer and redraws', function (assert) {
+        terminal.setInput('test command');
+        assert.equal(terminal.inputBuffer, 'test command', 'inputBuffer is set');
+        assert.equal(terminal.cursorPosition, 'test command'.length, 'cursor at end');
+      });
+
+      QUnit.test('insertText inserts at cursor position', function (assert) {
+        terminal.setInput('command');
+        terminal.insertText(' test');
+        assert.equal(terminal.inputBuffer, 'command test', 'text inserted');
+        assert.equal(terminal.cursorPosition, 'command test'.length, 'cursor moved');
+      });
+
+      QUnit.test('clearInput empties buffer', function (assert) {
+        terminal.setInput('some input');
+        terminal.clearInput();
+        assert.equal(terminal.inputBuffer, '', 'buffer cleared');
+        assert.equal(terminal.cursorPosition, 0, 'cursor at start');
+      });
+
+      QUnit.test('write writes data to terminal', function (assert) {
+        assert.equal(typeof terminal.write, 'function', 'write is function');
+      });
+
+      QUnit.test('clear clears terminal and resets input', function (assert) {
+        terminal.setInput('test');
+        terminal.clear();
+        assert.equal(terminal.inputBuffer, '', 'inputBuffer cleared');
+        assert.equal(terminal.cursorPosition, 0, 'cursor reset');
+      });
+    })();
+  </script>
+
+  <script>
+    (function () {
+      var terminal;
+
+      QUnit.module('Terminal Command History', {
+        beforeEach: function () {
+          terminal = window.terminal;
+          terminal.commandHistory = [];
+          terminal.historyIndex = -1;
+          terminal.inputBuffer = '';
+          terminal.cursorPosition = 0;
+        }
+      });
+
+      QUnit.test('handleEnter adds to history and clears input', function (assert) {
+        terminal.setInput('first command');
+        terminal.handleEnter();
+        assert.ok(terminal.commandHistory.indexOf('first command') >= 0, 'command in history');
+        assert.equal(terminal.commandHistory.length, 1, 'history length 1');
+        assert.equal(terminal.inputBuffer, '', 'input cleared');
+      });
+
+      QUnit.test('ArrowUp navigates to previous command', function (assert) {
+        terminal.setInput('cmd1');
+        terminal.handleEnter();
+        terminal.setInput('cmd2');
+        terminal.handleEnter();
+        terminal.setInput('cmd3');
+        terminal.handleArrowUp();
+        assert.equal(terminal.inputBuffer, 'cmd2', 'navigated to cmd2');
+      });
+
+      QUnit.test('multiple ArrowUp goes further back', function (assert) {
+        terminal.setInput('cmd1');
+        terminal.handleEnter();
+        terminal.setInput('cmd2');
+        terminal.handleEnter();
+        terminal.setInput('cmd3');
+        terminal.handleArrowUp();
+        terminal.handleArrowUp();
+        assert.equal(terminal.inputBuffer, 'cmd1', 'navigated to cmd1');
+      });
+
+      QUnit.test('ArrowLeft/Right moves cursor', function (assert) {
+        terminal.setInput('test');
+        terminal.handleArrowLeft();
+        terminal.handleArrowLeft();
+        assert.equal(terminal.cursorPosition, 2, 'cursor at position 2');
+      });
+
+      QUnit.test('Home/End moves cursor to start/end', function (assert) {
+        terminal.setInput('test');
+        terminal.handleHome();
+        assert.equal(terminal.cursorPosition, 0, 'Home moves to start');
+        terminal.handleEnd();
+        assert.equal(terminal.cursorPosition, 4, 'End moves to end');
+      });
+
+      QUnit.test('Backspace removes character before cursor', function (assert) {
+        terminal.setInput('test');
+        terminal.handleBackspace();
+        assert.equal(terminal.inputBuffer, 'tes', 'backspace removed char');
+      });
+
+      QUnit.test('Delete removes character at cursor', function (assert) {
+        terminal.setInput('test');
+        terminal.cursorPosition = 2;
+        terminal.handleDelete();
+        assert.equal(terminal.inputBuffer, 'tet', 'delete removed char at cursor');
+      });
+    })();
+  </script>
+
+  <script>
+    (function () {
+      var appTo1C;
+
+      QUnit.module('1C Bridge (appTo1C)', {
+        beforeEach: function () {
+          appTo1C = window.appTo1C;
+        }
+      });
+
+      QUnit.test('appTo1C.setInput delegates to terminal', function (assert) {
+        appTo1C.setInput('from 1c');
+        assert.equal(window.terminal.inputBuffer, 'from 1c', 'terminal inputBuffer updated');
+      });
+
+      QUnit.test('appTo1C.insertText delegates to terminal', function (assert) {
+        window.terminal.setInput('hello');
+        appTo1C.insertText(' world');
+        assert.equal(window.terminal.inputBuffer, 'hello world', 'text inserted');
+      });
+
+      QUnit.test('appTo1C.clearInput delegates to terminal', function (assert) {
+        appTo1C.setInput('to clear');
+        appTo1C.clearInput();
+        assert.equal(window.terminal.inputBuffer, '', 'buffer cleared');
+      });
+
+      QUnit.test('appTo1C.setBaseUrl updates base href when base exists', function (assert) {
+        var base = document.createElement('base');
+        base.href = 'http://original.com/';
+        document.head.appendChild(base);
+        appTo1C.setBaseUrl('https://example.com/path/');
+        var href = document.querySelector('base').getAttribute('href');
+        assert.equal(href, 'https://example.com/path/', 'base href updated');
+      });
+
+      QUnit.test('appTo1C.close is callable', function (assert) {
+        assert.equal(typeof appTo1C.close, 'function', 'close is function');
+        appTo1C.close();
+        assert.ok(true, 'close called without error');
+      });
+
+      QUnit.test('appTo1C.endOperation is callable', function (assert) {
+        assert.equal(typeof appTo1C.endOperation, 'function', 'endOperation is function');
+        appTo1C.endOperation('test');
+        assert.ok(true, 'endOperation called without error');
+      });
+    })();
+  </script>
+</body>
+
+</html>
