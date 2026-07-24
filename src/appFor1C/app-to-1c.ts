@@ -1,7 +1,10 @@
+import { OneTerminalOptions } from '@/app/OneTerminal'
+
 export interface AppTo1C {
   setBaseUrl: (url: string) => void
   close: () => void
-  endOperation: () => void
+  endOperation: (log: string) => void
+  init: (options?: OneTerminalOptions) => void
 }
 
 const setBaseUrl = (url: string): void => {
@@ -20,18 +23,22 @@ const close = () => {
   }, 0)
 }
 
-const endOperation = () => {
-  if (!window.terminalstream) {
-    return
-  }
+const init: AppTo1C['init'] = options => {
+  window.terminal.init(options)
+}
 
-  window.terminalstream.write('asdlasjdjasld')
-  window.terminalstream.close()
-  window.terminalstream = undefined
+const endOperation = (log: string) => {
+  // if (!window.terminalstream) {
+  //   return
+  // }
+  // window.terminalstream.write('asdlasjdjasld')
+  // window.terminalstream.close()
+  // window.terminalstream = undefined
 }
 
 window.appTo1C = {
   setBaseUrl,
   close,
-  endOperation
+  endOperation,
+  init
 }
