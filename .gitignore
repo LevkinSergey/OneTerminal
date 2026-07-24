@@ -24,3 +24,5 @@ ehthumbs.db
 Icon?
 
 .gigacode_vsc/
+playwright-report/
+test-results/
