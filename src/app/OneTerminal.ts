@@ -7,6 +7,18 @@ export interface OneTerminalOptions {
   separator?: string
 }
 
+const terminalSymbols = {
+  up: '\x1b[A',
+  down: '\x1b[B',
+  right: '\x1b[C',
+  left: '\x1b[D',
+  backspace: '\b'
+
+  // '\x1b[B': 'down',
+  // '\x1b[C': 'right',
+  // '\x1b[D': 'left'
+}
+
 export class OneTerminal {
   private terminal: Terminal
   private path: string = ''
@@ -71,15 +83,19 @@ export class OneTerminal {
   }
 
   prompt() {
-    const promptText = ` ${this.path}${this.separator} `
-    this.terminal.write(`\r\n${promptText}`)
+    const promptText = this.getPromptText()
+    this.terminal.write('\r\n' + promptText)
     this.terminal.write(this.inputBuffer.replace(/\n/g, '\r\n'))
     this.displayRowCount = this.getDisplayRowCount()
     this.lastCursorRow = 0
   }
 
+  private getPromptText(): string {
+    return this.path + this.separator
+  }
+
   private getPromptLength(): number {
-    return ` ${this.path}${this.separator} `.length
+    return this.getPromptText().length
   }
 
   private getDisplayPosition(pos: number): { row: number; col: number } {
@@ -109,7 +125,7 @@ export class OneTerminal {
   }
 
   private redrawInput() {
-    const promptText = ` ${this.path}${this.separator} `
+    const promptText = this.getPromptText()
 
     if (this.lastCursorRow > 0) {
       this.terminal.write(`\x1b[${this.lastCursorRow}A`)
