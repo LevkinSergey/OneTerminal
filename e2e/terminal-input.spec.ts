@@ -61,6 +61,54 @@ test.describe('Terminal Input Handling', () => {
     expect(called).toBe(true)
   })
 
+  test('setInput with multiline text', async ({ page }) => {
+    await page.evaluate(() => {
+      const term = (window as any).terminal
+      term.setInput('line1\nline2\nline3')
+    })
+
+    const buffer = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.inputBuffer
+    })
+    expect(buffer).toBe('line1\nline2\nline3')
+  })
+
+  test('insertText with newlines', async ({ page }) => {
+    await page.evaluate(() => {
+      const term = (window as any).terminal
+      term.setInput('ab')
+      term.cursorPosition = 1
+      term.insertText('\nhello\n')
+    })
+
+    const buffer = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.inputBuffer
+    })
+    expect(buffer).toBe('a\nhello\nb')
+  })
+
+  test('clearInput empties buffer and resets cursor position', async ({ page }) => {
+    await page.evaluate(() => {
+      const term = (window as any).terminal
+      term.setInput('line1\nline2')
+      term.clearInput()
+    })
+
+    const buffer = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.inputBuffer
+    })
+    expect(buffer).toBe('')
+
+    const pos = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.cursorPosition
+    })
+    expect(pos).toBe(0)
+  })
+
   test('clear clears terminal and resets input', async ({ page }) => {
     await page.evaluate(() => {
       const term = (window as any).terminal

@@ -19,10 +19,12 @@ export class OneTerminal {
   private commandHistory: string[] = []
   private historyIndex: number = -1
   private cursorPosition: number = 0
-  private isMultiline: boolean = false
 
   private terminalCursorX: number = 0
   private terminalCursorY: number = 0
+
+  private displayRowCount: number = 1
+  private lastCursorRow: number = 0
 
   constructor() {
     this.terminal = new Terminal({
@@ -70,39 +72,84 @@ export class OneTerminal {
 
   prompt() {
     const promptText = ` ${this.path}${this.separator} `
-    this.terminal.write(`\r\n${promptText}${this.inputBuffer}`)
+    this.terminal.write(`\r\n${promptText}`)
+    this.terminal.write(this.inputBuffer.replace(/\n/g, '\r\n'))
+    this.displayRowCount = this.getDisplayRowCount()
+    this.lastCursorRow = 0
+  }
+
+  private getPromptLength(): number {
+    return ` ${this.path}${this.separator} `.length
+  }
+
+  private getDisplayPosition(pos: number): { row: number; col: number } {
+    const promptLength = this.getPromptLength()
+    const cols = this.terminal.cols
+    let row = 0
+    let col = promptLength
+
+    for (let i = 0; i < pos; i++) {
+      if (this.inputBuffer[i] === '\n') {
+        row++
+        col = 0
+      } else {
+        col++
+        if (col >= cols) {
+          col = 0
+          row++
+        }
+      }
+    }
+
+    return { row, col }
+  }
+
+  private getDisplayRowCount(): number {
+    return this.getDisplayPosition(this.inputBuffer.length).row + 1
   }
 
   private redrawInput() {
-    this.terminal.write(`\r${' '.repeat(this.terminal.cols)}\r`)
-    this.terminal.write(` ${this.path}${this.separator} ${this.inputBuffer}`)
-    this.terminalCursorX = ` ${this.path}${this.separator} `.length + this.inputBuffer.length
+    const promptText = ` ${this.path}${this.separator} `
+
+    if (this.lastCursorRow > 0) {
+      this.terminal.write(`\x1b[${this.lastCursorRow}A`)
+    }
+    this.terminal.write('\r')
+    this.terminal.write('\x1b[J')
+
+    this.terminal.write(promptText)
+    this.terminal.write(this.inputBuffer.replace(/\n/g, '\r\n'))
+
+    this.displayRowCount = this.getDisplayRowCount()
     this.moveCursorToCursorPos()
   }
 
   private moveCursorToCursorPos() {
-    const promptLength = ` ${this.path}${this.separator} `.length
-    const targetX = promptLength + this.cursorPosition
-    const diff = targetX - this.terminalCursorX
-    if (diff > 0) {
-      this.terminal.write(' '.repeat(diff))
-      this.terminalCursorX = targetX
-    } else if (diff < 0) {
-      this.terminal.write('\b'.repeat(-diff))
-      this.terminalCursorX = targetX
-    }
-  }
+    const endPos = this.getDisplayPosition(this.inputBuffer.length)
+    const targetPos = this.getDisplayPosition(this.cursorPosition)
 
-  private moveCursorToPosition(position: number) {
-    const promptLength = ` ${this.path}${this.separator} `.length
-    const currentX = this.terminal.buffer.cursorX
-    const targetX = promptLength + position
-    const diff = targetX - currentX
-    if (diff > 0) {
-      this.terminal.write(' '.repeat(diff))
-    } else if (diff < 0) {
-      this.terminal.write('\b'.repeat(-diff))
+    this.lastCursorRow = targetPos.row
+
+    if (endPos.row === targetPos.row && endPos.col === targetPos.col) {
+      this.terminalCursorX = this.getPromptLength() + this.cursorPosition
+      return
     }
+
+    const rowDiff = endPos.row - targetPos.row
+    if (rowDiff > 0) {
+      this.terminal.write(`\x1b[${rowDiff}A`)
+    } else if (rowDiff < 0) {
+      this.terminal.write(`\x1b[${-rowDiff}B`)
+    }
+
+    const colDiff = targetPos.col - endPos.col
+    if (colDiff < 0) {
+      this.terminal.write('\b'.repeat(-colDiff))
+    } else if (colDiff > 0) {
+      this.terminal.write(`\x1b[${colDiff}C`)
+    }
+
+    this.terminalCursorX = this.getPromptLength() + this.cursorPosition
   }
 
   write(data: string) {
@@ -119,7 +166,6 @@ export class OneTerminal {
   setInput(input: string) {
     this.inputBuffer = input
     this.cursorPosition = input.length
-    this.terminalCursorX = ` ${this.path}${this.separator} `.length + input.length
     this.redrawInput()
   }
 
@@ -132,7 +178,6 @@ export class OneTerminal {
   clearInput() {
     this.inputBuffer = ''
     this.cursorPosition = 0
-    this.terminalCursorX = ` ${this.path}${this.separator} `.length
     this.redrawInput()
   }
 
@@ -196,7 +241,6 @@ export class OneTerminal {
   private handleArrowLeft() {
     if (this.cursorPosition > 0) {
       this.cursorPosition--
-      this.terminalCursorX--
       this.redrawInput()
     }
   }
@@ -204,7 +248,6 @@ export class OneTerminal {
   private handleArrowRight() {
     if (this.cursorPosition < this.inputBuffer.length) {
       this.cursorPosition++
-      this.terminalCursorX++
       this.redrawInput()
     }
   }
@@ -242,7 +285,6 @@ export class OneTerminal {
     if (this.cursorPosition > 0) {
       this.inputBuffer = this.inputBuffer.slice(0, this.cursorPosition - 1) + this.inputBuffer.slice(this.cursorPosition)
       this.cursorPosition--
-      this.terminalCursorX--
       this.redrawInput()
     }
   }
@@ -267,6 +309,22 @@ export class OneTerminal {
   private handleEnter() {
     this.commandHistory.push(this.inputBuffer)
     this.historyIndex = -1
+
+    const endPos = this.getDisplayPosition(this.inputBuffer.length)
+    const curPos = this.getDisplayPosition(this.cursorPosition)
+    const rowDiff = endPos.row - curPos.row
+    if (rowDiff > 0) {
+      this.terminal.write(`\x1b[${rowDiff}B`)
+    } else if (rowDiff < 0) {
+      this.terminal.write(`\x1b[${-rowDiff}A`)
+    }
+    const colDiff = endPos.col - curPos.col
+    if (colDiff > 0) {
+      this.terminal.write(`\x1b[${colDiff}C`)
+    } else if (colDiff < 0) {
+      this.terminal.write('\b'.repeat(-colDiff))
+    }
+
     this.terminal.write('\r\n')
     this.inputBuffer = ''
     this.cursorPosition = 0

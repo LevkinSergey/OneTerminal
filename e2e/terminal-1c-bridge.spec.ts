@@ -20,6 +20,19 @@ test.describe('Terminal 1C Bridge (appTo1C)', () => {
     expect(buffer).toBe('from 1c')
   })
 
+  test('appTo1C.setInput with multiline text', async ({ page }) => {
+    await page.evaluate(() => {
+      const appTo1C = (window as any).appTo1C
+      appTo1C.setInput('multi\nline\ninput')
+    })
+
+    const buffer = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.inputBuffer
+    })
+    expect(buffer).toBe('multi\nline\ninput')
+  })
+
   test('appTo1C.insertText delegates to terminal', async ({ page }) => {
     await page.evaluate(() => {
       const term = (window as any).terminal
