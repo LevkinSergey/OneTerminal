@@ -1,22 +1,11 @@
 import { Terminal } from 'xterm'
 import { fit } from 'xterm/lib/addons/fit/fit'
 import { WebLinksAddon } from 'xterm-addon-web-links'
+import { Ctrl, Cursor, Erase } from './terminal-control'
 
 export interface OneTerminalOptions {
   path?: string
   separator?: string
-}
-
-const terminalSymbols = {
-  up: '\x1b[A',
-  down: '\x1b[B',
-  right: '\x1b[C',
-  left: '\x1b[D',
-  backspace: '\b'
-
-  // '\x1b[B': 'down',
-  // '\x1b[C': 'right',
-  // '\x1b[D': 'left'
 }
 
 export class OneTerminal {
@@ -84,7 +73,7 @@ export class OneTerminal {
 
   prompt() {
     const promptText = this.getPromptText()
-    this.terminal.write('\r\n' + promptText)
+    this.terminal.write(Ctrl.CRLF + promptText)
     this.terminal.write(this.inputBuffer.replace(/\n/g, '\r\n'))
     this.displayRowCount = this.getDisplayRowCount()
     this.lastCursorRow = 0
@@ -128,10 +117,10 @@ export class OneTerminal {
     const promptText = this.getPromptText()
 
     if (this.lastCursorRow > 0) {
-      this.terminal.write(`\x1b[${this.lastCursorRow}A`)
+      this.terminal.write(Cursor.up(this.lastCursorRow))
     }
-    this.terminal.write('\r')
-    this.terminal.write('\x1b[J')
+    this.terminal.write(Ctrl.CR)
+    this.terminal.write(Erase.displayToEnd)
 
     this.terminal.write(promptText)
     this.terminal.write(this.inputBuffer.replace(/\n/g, '\r\n'))
@@ -153,16 +142,16 @@ export class OneTerminal {
 
     const rowDiff = endPos.row - targetPos.row
     if (rowDiff > 0) {
-      this.terminal.write(`\x1b[${rowDiff}A`)
+      this.terminal.write(Cursor.up(rowDiff))
     } else if (rowDiff < 0) {
-      this.terminal.write(`\x1b[${-rowDiff}B`)
+      this.terminal.write(Cursor.down(-rowDiff))
     }
 
     const colDiff = targetPos.col - endPos.col
     if (colDiff < 0) {
-      this.terminal.write('\b'.repeat(-colDiff))
+      this.terminal.write(Ctrl.BS.repeat(-colDiff))
     } else if (colDiff > 0) {
-      this.terminal.write(`\x1b[${colDiff}C`)
+      this.terminal.write(Cursor.forward(colDiff))
     }
 
     this.terminalCursorX = this.getPromptLength() + this.cursorPosition
@@ -330,18 +319,18 @@ export class OneTerminal {
     const curPos = this.getDisplayPosition(this.cursorPosition)
     const rowDiff = endPos.row - curPos.row
     if (rowDiff > 0) {
-      this.terminal.write(`\x1b[${rowDiff}B`)
+      this.terminal.write(Cursor.down(rowDiff))
     } else if (rowDiff < 0) {
-      this.terminal.write(`\x1b[${-rowDiff}A`)
+      this.terminal.write(Cursor.up(-rowDiff))
     }
     const colDiff = endPos.col - curPos.col
     if (colDiff > 0) {
-      this.terminal.write(`\x1b[${colDiff}C`)
+      this.terminal.write(Cursor.forward(colDiff))
     } else if (colDiff < 0) {
-      this.terminal.write('\b'.repeat(-colDiff))
+      this.terminal.write(Ctrl.BS.repeat(-colDiff))
     }
 
-    this.terminal.write('\r\n')
+    this.terminal.write(Ctrl.CRLF)
     this.inputBuffer = ''
     this.cursorPosition = 0
     this.prompt()
