@@ -1,7 +1,7 @@
 import { Terminal } from 'xterm'
 import { fit } from 'xterm/lib/addons/fit/fit'
 import { WebLinksAddon } from 'xterm-addon-web-links'
-import { Ctrl, Cursor, Erase } from './terminal-control'
+import { Ctrl, Cursor, Erase, Style } from './terminal-control'
 
 export interface OneTerminalOptions {
   path?: string
@@ -80,7 +80,7 @@ export class OneTerminal {
   }
 
   private getPromptText(): string {
-    return this.path + this.separator
+    return ' ' + Style.bold + Style.Fg.blue + this.path + Style.Fg.green + this.separator + Style.reset + Style.Fg.default_ + ' '
   }
 
   private getPromptLength(): number {
@@ -238,9 +238,7 @@ export class OneTerminal {
   }
 
   private handleCharacterInput(char: string) {
-    this.inputBuffer = this.inputBuffer.slice(0, this.cursorPosition) + char + this.inputBuffer.slice(this.cursorPosition)
-    this.cursorPosition++
-    this.redrawInput()
+    this.insertText(char)
   }
 
   private handleArrowLeft() {
