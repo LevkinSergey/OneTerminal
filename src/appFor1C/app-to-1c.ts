@@ -9,7 +9,7 @@ export interface AppTo1C {
   insertText: (text: string) => void
   clearInput: () => void
   startOperation: () => void
-  write: (data: string) => void
+  setPath: (path: string) => void
 }
 
 const setBaseUrl = (url: string): void => {
@@ -38,12 +38,6 @@ const startOperation = (): void => {
   }, 0)
 }
 
-const write = (data: string): void => {
-  setTimeout(() => {
-    window.terminal.write(data)
-  }, 0)
-}
-
 const endOperation = (log?: string) => {
   setTimeout(() => {
     window.terminal.endOperation(log)
@@ -68,6 +62,12 @@ const clearInput = (): void => {
   }, 0)
 }
 
+const setPath: AppTo1C['setPath'] = path => {
+  setTimeout(() => {
+    window.terminal.setPath(path)
+  }, 0)
+}
+
 window.appTo1C = {
   setBaseUrl,
   close,
@@ -77,7 +77,7 @@ window.appTo1C = {
   insertText,
   clearInput,
   startOperation,
-  write
+  setPath
 }
 
 const serialiseText = <T>(text: T | string): T => {

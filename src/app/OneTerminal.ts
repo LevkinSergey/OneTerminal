@@ -68,6 +68,11 @@ export class OneTerminal {
     this.prompt()
   }
 
+  setPath(path: string) {
+    this.path = path
+    this.redrawInput()
+  }
+
   private attachDirectInputHandlers() {
     const textarea = this.terminal.textarea
 
@@ -256,9 +261,7 @@ export class OneTerminal {
   }
 
   clearInput() {
-    this.inputBuffer = ''
-    this.cursorPosition = 0
-    this.redrawInput()
+    this.setInput('')
   }
 
   private onCursorMove() {

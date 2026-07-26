@@ -5,11 +5,10 @@ import { OneTerminal } from './OneTerminal'
 window.terminal = new OneTerminal()
 window.addEventListener('resize', () => window.terminal.fit())
 
-function runFakeTerminal(): void {
+function runTerminal(): void {
   window.terminal.init({
-    path: 'fake',
+    path: '',
     separator: '$'
   })
 }
-// createTerminal()
-runFakeTerminal()
+runTerminal()
