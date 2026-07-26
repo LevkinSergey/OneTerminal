@@ -1,1 +1,1 @@
-require('keyboardevent-key-polyfill').polyfill()
+// require('keyboardevent-key-polyfill').polyfill()

@@ -14,8 +14,6 @@ export class OneTerminal {
   private separator: string = '$'
   private initilized: boolean = false
 
-  private dataDisabled: boolean = false
-
   private inputBuffer: string = ''
   private commandHistory: string[] = []
   private historyIndex: number = -1
@@ -27,14 +25,15 @@ export class OneTerminal {
   private displayRowCount: number = 1
   private lastCursorRow: number = 0
 
+  private isComposing: boolean = false
+
   constructor() {
     this.terminal = new Terminal({
       windowsMode: false,
-      // convertEol: true,
       rightClickSelectsWord: true
-      // disableStdin: true
     })
-    this.path = ''
+
+    this.terminal.attachCustomKeyEventHandler(() => false)
 
     this.terminal.loadAddon(
       new WebLinksAddon((event, url) => {
@@ -43,9 +42,7 @@ export class OneTerminal {
       })
     )
 
-    this.terminal.onKey(this.onKey.bind(this))
     this.terminal.onLineFeed(this.onLineFeed.bind(this))
-    this.terminal.onData(this.onData.bind(this))
     this.terminal.onResize(this.onResize.bind(this))
     this.terminal.onTitleChange(this.onTitleChange.bind(this))
     this.terminal.onCursorMove(this.onCursorMove.bind(this))
@@ -60,11 +57,92 @@ export class OneTerminal {
 
     this.terminal.open(document.getElementById('app') as HTMLElement)
 
+    this.attachDirectInputHandlers()
+
     this.fit()
     this.terminal.focus()
     this.initilized = true
 
     this.prompt()
+  }
+
+  private attachDirectInputHandlers() {
+    const textarea = this.terminal.textarea
+
+    textarea.addEventListener('compositionstart', () => {
+      this.isComposing = true
+    })
+
+    textarea.addEventListener('compositionend', () => {
+      this.isComposing = false
+    })
+
+    textarea.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (this.handleKeydown(event)) {
+        event.preventDefault()
+      }
+    })
+
+    textarea.addEventListener('input', () => {
+      if (this.isComposing) return
+      const value = textarea.value
+      if (value) {
+        this.insertText(value)
+        textarea.value = ''
+      }
+    })
+  }
+
+  private handleKeydown(event: KeyboardEvent): boolean {
+    const key = event.key
+    const keyCode = event.keyCode
+
+    if (key === 'Enter' || keyCode === 13) {
+      this.handleEnter()
+      return true
+    }
+    if (key === 'ArrowLeft' || keyCode === 37) {
+      this.handleArrowLeft()
+      return true
+    }
+    if (key === 'ArrowRight' || keyCode === 39) {
+      this.handleArrowRight()
+      return true
+    }
+    if (key === 'ArrowUp' || keyCode === 38) {
+      this.handleArrowUp()
+      return true
+    }
+    if (key === 'ArrowDown' || keyCode === 40) {
+      this.handleArrowDown()
+      return true
+    }
+    if (key === 'Backspace' || keyCode === 8) {
+      this.handleBackspace()
+      return true
+    }
+    if (key === 'Delete' || keyCode === 46) {
+      this.handleDelete()
+      return true
+    }
+    if (key === 'Home' || keyCode === 36) {
+      this.handleHome()
+      return true
+    }
+    if (key === 'End' || keyCode === 35) {
+      this.handleEnd()
+      return true
+    }
+    if (
+      key === 'Tab' || keyCode === 9 ||
+      key === 'Insert' || keyCode === 45 ||
+      key === 'PageUp' || keyCode === 33 ||
+      key === 'PageDown' || keyCode === 34
+    ) {
+      return true
+    }
+
+    return false
   }
 
   fit() {
@@ -186,14 +264,6 @@ export class OneTerminal {
     this.redrawInput()
   }
 
-  private onData(data: string) {
-    if (this.dataDisabled) {
-      return
-    }
-    console.log('onData', data)
-    this.terminal.write(data)
-  }
-
   private onCursorMove() {
     this.terminalCursorX = this.terminal.buffer.cursorX
     this.terminalCursorY = this.terminal.buffer.cursorY
@@ -204,38 +274,6 @@ export class OneTerminal {
   }
 
   private onResize(ev: { cols: number; rows: number }) {}
-
-  private onKey(e: { key: string; domEvent: KeyboardEvent }) {
-    this.dataDisabled = true
-
-    const ev = e.domEvent as KeyboardEvent
-    const printable = !ev.altKey && !ev.ctrlKey && !ev.metaKey
-
-    const key = ev.key
-
-    if (key === 'Enter') {
-      this.handleEnter()
-    } else if (key === 'ArrowLeft') {
-      this.handleArrowLeft()
-    } else if (key === 'ArrowRight') {
-      this.handleArrowRight()
-    } else if (key === 'ArrowUp') {
-      this.handleArrowUp()
-    } else if (key === 'ArrowDown') {
-      this.handleArrowDown()
-    } else if (key === 'Backspace') {
-      this.handleBackspace()
-    } else if (key === 'Delete') {
-      this.handleDelete()
-    } else if (key === 'Tab' || key === 'Insert' || key === 'PageUp' || key === 'PageDown') {
-    } else if (key === 'Home') {
-      this.handleHome()
-    } else if (key === 'End') {
-      this.handleEnd()
-    } else if (printable) {
-      this.handleCharacterInput(e.key)
-    }
-  }
 
   private handleCharacterInput(char: string) {
     this.insertText(char)
