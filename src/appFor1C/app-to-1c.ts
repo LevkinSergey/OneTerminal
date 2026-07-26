@@ -4,7 +4,7 @@ export interface AppTo1C {
   setBaseUrl: (url: string) => void
   close: () => void
   endOperation: (log?: string) => void
-  init: (options?: OneTerminalOptions) => void
+  init: (options: string | OneTerminalOptions) => void
   setInput: (input: string) => void
   insertText: (text: string) => void
   clearInput: () => void
@@ -29,7 +29,7 @@ const close = () => {
 }
 
 const init: AppTo1C['init'] = options => {
-  window.terminal.init(options || {})
+  window.terminal.init(serialiseText<OneTerminalOptions>(options || {}))
 }
 
 const startOperation = (): void => {
@@ -78,4 +78,11 @@ window.appTo1C = {
   clearInput,
   startOperation,
   write
+}
+
+const serialiseText = <T>(text: T | string): T => {
+  if (typeof text === 'string') {
+    return JSON.parse(text) as T
+  }
+  return text
 }
