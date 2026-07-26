@@ -2,6 +2,8 @@ import { Terminal } from 'xterm'
 import { fit } from 'xterm/lib/addons/fit/fit'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 import { Ctrl, Cursor, Erase, Style } from './terminal-control'
+import { emitEventTo1C } from '@/appFor1C/eventDispatcherTo1C'
+import { ONE_TERMINAL_EVENT_START_COMMAND } from '@/appFor1C/eventNamesTo1C'
 
 export interface OneTerminalOptions {
   path?: string
@@ -133,12 +135,7 @@ export class OneTerminal {
       this.handleEnd()
       return true
     }
-    if (
-      key === 'Tab' || keyCode === 9 ||
-      key === 'Insert' || keyCode === 45 ||
-      key === 'PageUp' || keyCode === 33 ||
-      key === 'PageDown' || keyCode === 34
-    ) {
+    if (key === 'Tab' || keyCode === 9 || key === 'Insert' || keyCode === 45 || key === 'PageUp' || keyCode === 33 || key === 'PageDown' || keyCode === 34) {
       return true
     }
 
@@ -347,10 +344,7 @@ export class OneTerminal {
     this.redrawInput()
   }
 
-  private handleEnter() {
-    this.commandHistory.push(this.inputBuffer)
-    this.historyIndex = -1
-
+  private moveCursorToEnd() {
     const endPos = this.getDisplayPosition(this.inputBuffer.length)
     const curPos = this.getDisplayPosition(this.cursorPosition)
     const rowDiff = endPos.row - curPos.row
@@ -365,11 +359,29 @@ export class OneTerminal {
     } else if (colDiff < 0) {
       this.terminal.write(Ctrl.BS.repeat(-colDiff))
     }
+  }
+
+  startOperation() {
+    this.commandHistory.push(this.inputBuffer)
+    this.historyIndex = -1
+
+    this.moveCursorToEnd()
+    emitEventTo1C(ONE_TERMINAL_EVENT_START_COMMAND, this.inputBuffer)
 
     this.terminal.write(Ctrl.CRLF)
     this.inputBuffer = ''
     this.cursorPosition = 0
+  }
+
+  endOperation(log?: string) {
+    if (log) {
+      this.terminal.write(log.replace(/\n/g, Ctrl.CRLF) + Ctrl.CRLF)
+    }
     this.prompt()
+  }
+
+  private handleEnter() {
+    this.startOperation()
   }
   private onLineFeed() {
     console.log('onLineFeed')
