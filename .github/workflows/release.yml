@@ -27,8 +27,11 @@ jobs:
           cd dist
           zip -r ../OneTerminal.zip .
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - name: Публикация файлов
+        uses: softprops/action-gh-release@v3
+        if: ${{ success() }}
         with:
+          prerelease: ${{ inputs.prerelease }}
           files: OneTerminal.zip
-          generate_release_notes: true
+          fail_on_unmatched_files: true
+          token: ${{ secrets.GITHUB_TOKEN }}
