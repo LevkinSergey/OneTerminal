@@ -21,6 +21,9 @@ export class OneTerminal {
   private historyIndex: number = -1
   private cursorPosition: number = 0
 
+  private commonCommands: string[] = []
+  private localCommands: string[] = []
+
   private terminalCursorX: number = 0
   private terminalCursorY: number = 0
 
@@ -71,6 +74,14 @@ export class OneTerminal {
   setPath(path: string) {
     this.path = path
     this.redrawInput()
+  }
+
+  setCommonCommands(commands: string[]) {
+    this.commonCommands = commands
+  }
+
+  setLocalCommands(commands: string[]) {
+    this.localCommands = commands
   }
 
   private attachDirectInputHandlers() {
@@ -140,7 +151,11 @@ export class OneTerminal {
       this.handleEnd()
       return true
     }
-    if (key === 'Tab' || keyCode === 9 || key === 'Insert' || keyCode === 45 || key === 'PageUp' || keyCode === 33 || key === 'PageDown' || keyCode === 34) {
+    if (key === 'Tab' || keyCode === 9) {
+      this.handleTab()
+      return true
+    }
+    if (key === 'Insert' || keyCode === 45 || key === 'PageUp' || keyCode === 33 || key === 'PageDown' || keyCode === 34) {
       return true
     }
 
@@ -386,6 +401,50 @@ export class OneTerminal {
       this.terminal.write(log.replace(/\n/g, Ctrl.CRLF) + Ctrl.CRLF)
     }
     this.prompt()
+  }
+
+  private handleTab() {
+    const allCommands = [...this.commonCommands, ...this.localCommands]
+    if (allCommands.length === 0) return
+
+    const spaceIndex = this.inputBuffer.indexOf(' ')
+    if (spaceIndex !== -1) return
+
+    const prefix = this.inputBuffer
+    const matches = allCommands.filter(cmd =>
+      cmd.toLowerCase().startsWith(prefix.toLowerCase())
+    )
+    if (matches.length === 0) return
+
+    if (matches.length === 1) {
+      this.replaceFirstWord(matches[0])
+      return
+    }
+
+    const lcp = this.longestCommonPrefix(matches)
+    if (lcp && lcp !== prefix) {
+      this.replaceFirstWord(lcp)
+    }
+  }
+
+  private replaceFirstWord(newWord: string) {
+    const spaceIndex = this.inputBuffer.indexOf(' ')
+    const rest = spaceIndex === -1 ? '' : this.inputBuffer.slice(spaceIndex)
+    this.inputBuffer = newWord + rest
+    this.cursorPosition = this.inputBuffer.length
+    this.redrawInput()
+  }
+
+  private longestCommonPrefix(strings: string[]): string {
+    if (strings.length === 0) return ''
+    let prefix = strings[0]
+    for (let i = 1; i < strings.length; i++) {
+      while (strings[i].indexOf(prefix) !== 0) {
+        prefix = prefix.slice(0, -1)
+        if (prefix === '') return ''
+      }
+    }
+    return prefix
   }
 
   private handleEnter() {

@@ -10,6 +10,8 @@ export interface AppTo1C {
   clearInput: () => void
   startOperation: () => void
   setPath: (path: string) => void
+  setCommonCommands: (commands: string) => void
+  setLocalCommands: (commands: string) => void
 }
 
 const setBaseUrl = (url: string): void => {
@@ -68,6 +70,18 @@ const setPath: AppTo1C['setPath'] = path => {
   }, 0)
 }
 
+const setCommonCommands: AppTo1C['setCommonCommands'] = commands => {
+  setTimeout(() => {
+    window.terminal.setCommonCommands(serialiseText<string[]>(commands))
+  }, 0)
+}
+
+const setLocalCommands: AppTo1C['setLocalCommands'] = commands => {
+  setTimeout(() => {
+    window.terminal.setLocalCommands(serialiseText<string[]>(commands))
+  }, 0)
+}
+
 window.appTo1C = {
   setBaseUrl,
   close,
@@ -77,7 +91,9 @@ window.appTo1C = {
   insertText,
   clearInput,
   startOperation,
-  setPath
+  setPath,
+  setCommonCommands,
+  setLocalCommands
 }
 
 const serialiseText = <T>(text: T | string): T => {
