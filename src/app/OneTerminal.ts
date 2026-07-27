@@ -275,10 +275,6 @@ export class OneTerminal {
 
   private onResize(ev: { cols: number; rows: number }) {}
 
-  private handleCharacterInput(char: string) {
-    this.insertText(char)
-  }
-
   private handleArrowLeft() {
     if (this.cursorPosition > 0) {
       this.cursorPosition--
@@ -369,11 +365,20 @@ export class OneTerminal {
     this.historyIndex = -1
 
     this.moveCursorToEnd()
-    emitEventTo1C(ONE_TERMINAL_EVENT_START_COMMAND, this.inputBuffer)
-
+    let executeLocal: boolean = false
+    if (this.inputBuffer.trim() === 'clear') {
+      this.terminal.clear()
+      executeLocal = true
+    } else {
+      emitEventTo1C(ONE_TERMINAL_EVENT_START_COMMAND, this.inputBuffer)
+    }
     this.terminal.write(Ctrl.CRLF)
+
     this.inputBuffer = ''
     this.cursorPosition = 0
+    if (executeLocal) {
+      this.endOperation()
+    }
   }
 
   endOperation(log?: string) {
