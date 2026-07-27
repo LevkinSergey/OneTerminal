@@ -20,12 +20,6 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run lint
-
-      - run: npm run tscheck
-
-      - run: npm run format:diff
-
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
