@@ -32,6 +32,8 @@ export class OneTerminal {
 
   private isComposing: boolean = false
 
+  private lastTabTime: number = 0
+
   constructor() {
     this.terminal = new Terminal({
       windowsMode: false,
@@ -404,6 +406,10 @@ export class OneTerminal {
   }
 
   private handleTab() {
+    const now = Date.now()
+    const isDoubleTab = now - this.lastTabTime < 500
+    this.lastTabTime = now
+
     const allCommands = [...this.commonCommands, ...this.localCommands]
     if (allCommands.length === 0) return
 
@@ -411,10 +417,20 @@ export class OneTerminal {
     if (spaceIndex !== -1) return
 
     const prefix = this.inputBuffer
-    const matches = allCommands.filter(cmd =>
-      cmd.toLowerCase().startsWith(prefix.toLowerCase())
-    )
+    const matches = allCommands.filter(cmd => cmd.toLowerCase().startsWith(prefix.toLowerCase()))
     if (matches.length === 0) return
+
+    if (isDoubleTab && matches.length > 1) {
+      if (matches.length > 40) {
+        this.terminal.write(Ctrl.CRLF + '(слишком много подобрано команд: ' + matches.length + ')' + Ctrl.CRLF)
+      } else {
+        this.terminal.write(Ctrl.CRLF + matches.join('  ') + Ctrl.CRLF)
+      }
+      this.inputBuffer = ''
+      this.cursorPosition = 0
+      this.prompt()
+      return
+    }
 
     if (matches.length === 1) {
       this.replaceFirstWord(matches[0])

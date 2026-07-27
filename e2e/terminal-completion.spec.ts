@@ -190,4 +190,120 @@ test.describe('Terminal Command Completion (Tab)', () => {
     })
     expect(buffer).toBe('Docker')
   })
+
+  test('double Tab with >1 matches shows filtered commands and resets buffer', async ({ page }) => {
+    await page.evaluate(() => {
+      const term = (window as any).terminal
+      term.setCommonCommands(['docker', 'docker-compose', 'dockerd', 'git'])
+      term.setInput('doc')
+      // simulate double-tab
+      term.lastTabTime = Date.now() - 50
+      term.handleTab()
+    })
+
+    const buffer = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.inputBuffer
+    })
+    expect(buffer).toBe('')
+  })
+
+  test('double Tab with exactly 1 match does not show list, completes normally', async ({ page }) => {
+    await page.evaluate(() => {
+      const term = (window as any).terminal
+      term.setCommonCommands(['docker', 'git'])
+      term.setInput('git')
+      term.lastTabTime = Date.now() - 50
+      term.handleTab()
+    })
+
+    const buffer = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.inputBuffer
+    })
+    // single match completes it (already exact match, so unchanged)
+    expect(buffer).toBe('git')
+  })
+
+  test('double Tab with 0 matches does nothing', async ({ page }) => {
+    await page.evaluate(() => {
+      const term = (window as any).terminal
+      term.setCommonCommands(['docker', 'git'])
+      term.setInput('xyz')
+      term.lastTabTime = Date.now() - 50
+      term.handleTab()
+    })
+
+    const buffer = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.inputBuffer
+    })
+    expect(buffer).toBe('xyz')
+  })
+
+  test('double Tab with >40 matches shows count message instead of list', async ({ page }) => {
+    await page.evaluate(() => {
+      const term = (window as any).terminal
+      const manyCommands = Array.from({ length: 50 }, (_, i) => 'cmd' + (i + 1))
+      term.setCommonCommands(manyCommands)
+      term.setInput('cmd')
+      term.lastTabTime = Date.now() - 50
+      term.handleTab()
+    })
+
+    const buffer = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.inputBuffer
+    })
+    expect(buffer).toBe('')
+  })
+
+  test('double Tab with 41 matches shows count message', async ({ page }) => {
+    await page.evaluate(() => {
+      const term = (window as any).terminal
+      const manyCommands = Array.from({ length: 41 }, (_, i) => 'tool-' + (i + 1))
+      term.setCommonCommands(manyCommands)
+      term.setInput('tool')
+      term.lastTabTime = Date.now() - 50
+      term.handleTab()
+    })
+
+    const buffer = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.inputBuffer
+    })
+    expect(buffer).toBe('')
+  })
+
+  test('double Tab with 40 matches shows the list', async ({ page }) => {
+    await page.evaluate(() => {
+      const term = (window as any).terminal
+      const manyCommands = Array.from({ length: 40 }, (_, i) => 'item-' + (i + 1))
+      term.setCommonCommands(manyCommands)
+      term.setInput('item')
+      term.lastTabTime = Date.now() - 50
+      term.handleTab()
+    })
+
+    const buffer = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.inputBuffer
+    })
+    expect(buffer).toBe('')
+  })
+
+  test('double Tab with empty command lists does nothing', async ({ page }) => {
+    await page.evaluate(() => {
+      const term = (window as any).terminal
+      term.setInput('test')
+      term.lastTabTime = Date.now() - 50
+      term.handleTab()
+    })
+
+    const buffer = await page.evaluate(() => {
+      const term = (window as any).terminal
+      return term.inputBuffer
+    })
+    expect(buffer).toBe('test')
+  })
 })
