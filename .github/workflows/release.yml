@@ -30,6 +30,6 @@ jobs:
       - name: Публикация файлов
         uses: softprops/action-gh-release@v3
         with:
-           files: OneTerminal.zip
+          files: OneTerminal.zip
           fail_on_unmatched_files: true
           token: ${{ secrets.GITHUB_TOKEN }}
